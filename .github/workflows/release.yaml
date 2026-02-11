@@ -1,10 +1,11 @@
-name: Release
+name: Publish
 
 on:
   workflow_run:
     workflows: [CI]
     types: [completed]
     branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}
@@ -14,15 +15,15 @@ permissions:
   id-token: write
 
 jobs:
-  release:
-    if: github.event.workflow_run.conclusion == 'success'
-    name: Semantic Release
+  publish:
+    name: Publish to GitHub & npm
     runs-on: ubuntu-latest
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.ref || github.event.workflow_run.head_sha }}
           fetch-depth: 0
 
       - uses: ./.github/actions/prepare
@@ -30,7 +31,7 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Release
+      - name: Publish to GitHub Release and npm
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
