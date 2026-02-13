@@ -38,7 +38,7 @@
     "tsc:check": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "release": "semantic-release"
+    "release": "release-it"
   },
   "config": {
     "commitizen": {
