@@ -52,7 +52,7 @@
     "@commitlint/cli": "^19.6.1",
     "@commitlint/config-conventional": "^19.6.0",
     "@eslint/js": "^9.15.0",
-    "@release-it/conventional-changelog": "^10.0.5",
+    "@release-it/conventional-changelog": "10.0.1",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
     "commitizen": "^4.3.1",
