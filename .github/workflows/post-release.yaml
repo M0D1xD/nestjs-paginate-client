@@ -2,10 +2,10 @@ jobs:
   post_release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - run: echo "npm_version=$(npm pkg get version | tr -d '"')" >> "$GITHUB_ENV"
+      - name: Set version from release tag
+        run: echo "npm_version=${RELEASE_TAG#v}" >> "$GITHUB_ENV"
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
       - uses: apexskier/github-release-commenter@v1
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
