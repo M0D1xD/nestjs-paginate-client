@@ -108,7 +108,7 @@ For full control use `buildFilterToken({ comparator, suffix, operator, value })`
 
 Contributions are welcome. See [CONTRIBUTING.md](.github/CONTRIBUTING.md) for guidelines and [DEVELOPMENT.md](.github/DEVELOPMENT.md) for local setup and scripts.
 
-Releases to npm are automated via [release-it](https://github.com/release-it/release-it) on the default branch. For token setup and release flow, see [docs/RELEASE_AND_TOKENS.md](docs/RELEASE_AND_TOKENS.md).
+Releases to npm are automated via [release-it](https://github.com/release-it/release-it) on the default branch.
 
 ## Credits
 
