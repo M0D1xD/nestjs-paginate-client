@@ -1,6 +1,6 @@
 {
   "name": "nestjs-paginate-client",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Type-safe query string builder for nestjs-paginate compatible backends. This package is a client-side library for the nestjs-paginate package.",
   "type": "module",
   "main": "./dist/index.cjs",
