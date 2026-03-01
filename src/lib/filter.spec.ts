@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  and,
   buildFilterToken,
   eq,
   gte,
@@ -58,6 +59,23 @@ describe('buildFilterToken', () => {
       }),
     ).toBe('$not:$eq:x');
   });
+
+  it('does not emit $and when comparator is AND (default behavior)', () => {
+    expect(
+      buildFilterToken({
+        comparator: FilterComparator.AND,
+        operator: FilterOperator.EQ,
+        value: 'foo',
+      }),
+    ).toBe('$eq:foo');
+  });
+
+  it('throws when non-null operator receives no value', () => {
+    expect(() => buildFilterToken({ operator: FilterOperator.EQ })).toThrow(
+      'Filter operator "$eq" requires a value, but none was provided.',
+    );
+    expect(() => buildFilterToken({ operator: FilterOperator.GTE })).toThrow();
+  });
 });
 
 describe('filter helpers', () => {
@@ -94,16 +112,22 @@ describe('filter helpers', () => {
     expect(sw('Ga')).toBe('$sw:Ga');
   });
 
-  it('contains()', () => {
-    expect(contains([1, 2])).toBe('$contains:1,2');
+  it('contains() variadic', () => {
+    expect(contains(1, 2)).toBe('$contains:1,2');
+    expect(contains('a', 'b', 'c')).toBe('$contains:a,b,c');
   });
 
   it('not()', () => {
     expect(not(eq('x'))).toBe('$not:$eq:x');
     expect(not(inOp([1, 2]))).toBe('$not:$in:1,2');
+    expect(not(nullOp())).toBe('$not:$null');
   });
 
   it('or()', () => {
     expect(or(eq('foo'))).toBe('$or:$eq:foo');
+  });
+
+  it('and()', () => {
+    expect(and(eq('foo'))).toBe('$and:$eq:foo');
   });
 });
