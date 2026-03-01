@@ -53,7 +53,9 @@ describe('fromQueryString', () => {
   });
 
   it('parses multiple values for the same filter key into array', () => {
-    const params = fromQueryString<User>('?filter.name=%24or%3A%24eq%3AA&filter.name=%24or%3A%24eq%3AB').toParams();
+    const params = fromQueryString<User>(
+      '?filter.name=%24or%3A%24eq%3AA&filter.name=%24or%3A%24eq%3AB',
+    ).toParams();
     expect(params['filter.name']).toEqual(['$or:$eq:A', '$or:$eq:B']);
   });
 

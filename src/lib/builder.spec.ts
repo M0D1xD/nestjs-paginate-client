@@ -4,7 +4,13 @@ import { createPaginateParams, eq, gte, inOp, or } from '..';
 // Course is the entity referenced by UserCourse.courseId (kept for domain typing)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- domain type for documentation
 type Course = { id: number; name: string; price: number };
-type UserCourse = { id: number; userId: number; courseId: number; registerDate: Date; expiryDate: Date };
+type UserCourse = {
+  id: number;
+  userId: number;
+  courseId: number;
+  registerDate: Date;
+  expiryDate: Date;
+};
 type User = { id: number; name: string; email: string; courses: UserCourse[] };
 
 describe('PaginateQueryBuilder', () => {
@@ -125,7 +131,10 @@ describe('PaginateQueryBuilder', () => {
 
   it('createPaginateParams() with sortBy array of tuples', () => {
     const params = createPaginateParams<User>({
-      sortBy: [['name', 'ASC'], ['email', 'DESC']],
+      sortBy: [
+        ['name', 'ASC'],
+        ['email', 'DESC'],
+      ],
     }).toParams();
     expect(params.sortBy).toEqual(['name:ASC', 'email:DESC']);
   });

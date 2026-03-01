@@ -17,7 +17,9 @@ import { PaginateQueryBuilder } from './builder';
  * builder.limit(10).toQueryString();
  * ```
  */
-export function fromQueryString<T extends Record<string, unknown>>(qs: string): PaginateQueryBuilder<T> {
+export function fromQueryString<T extends Record<string, unknown>>(
+  qs: string,
+): PaginateQueryBuilder<T> {
   const builder = new PaginateQueryBuilder<T>();
   const queryStr = qs.startsWith('?') ? qs.slice(1) : qs;
   if (!queryStr) return builder;

@@ -241,7 +241,10 @@ export function createPaginateParams<T extends Record<string, unknown>>(
   if (input.cursor !== undefined) builder.cursor(input.cursor);
   if (input.withDeleted !== undefined) builder.withDeleted(input.withDeleted);
   if (input.filter !== undefined) {
-    for (const [col, token] of Object.entries(input.filter) as [ColumnPath<T>, string | string[]][]) {
+    for (const [col, token] of Object.entries(input.filter) as [
+      ColumnPath<T>,
+      string | string[],
+    ][]) {
       builder.filter(col, token);
     }
   }
