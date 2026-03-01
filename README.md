@@ -104,6 +104,76 @@ For full control use `buildFilterToken({ comparator, suffix, operator, value })`
 - **toQueryString(params)** — serialize a params object to a query string.
 - **PaginatedResponse&lt;T&gt;**, **PaginatedMeta**, **PaginatedLinks** — TypeScript interfaces matching the nestjs-paginate response shape, ready to use as response types in fetch/axios calls.
 
+## Examples
+
+Full working examples for React, Vue 3, and Angular are in the [`example/`](./example) directory. Each includes a composable/hook/service and a ready-to-use table component.
+
+### React
+
+```tsx
+import { usePaginatedUsers } from './usePaginatedUsers';
+
+function UsersPage() {
+  const { data, meta, loading, page, setPage, setSearch, setSort } =
+    usePaginatedUsers({ baseUrl: 'https://api.example.com' });
+
+  if (loading) return <p>Loading…</p>;
+  return (
+    <>
+      <input onChange={e => setSearch(e.target.value)} placeholder="Search…" />
+      <table>
+        <tbody>
+          {data.map(u => <tr key={u.id}><td>{u.name}</td><td>{u.email}</td></tr>)}
+        </tbody>
+      </table>
+      <button disabled={page === 1} onClick={() => setPage(page - 1)}>Prev</button>
+      <button disabled={page === meta?.totalPages} onClick={() => setPage(page + 1)}>Next</button>
+    </>
+  );
+}
+```
+
+### Vue 3
+
+```vue
+<script setup lang="ts">
+import { usePaginatedUsers } from './usePaginatedUsers';
+
+const { data, meta, loading, page, setPage, setSearch } =
+  usePaginatedUsers({ baseUrl: 'https://api.example.com' });
+</script>
+
+<template>
+  <input @input="e => setSearch((e.target as HTMLInputElement).value)" placeholder="Search…" />
+  <p v-if="loading">Loading…</p>
+  <table v-else>
+    <tr v-for="u in data" :key="u.id"><td>{{ u.name }}</td><td>{{ u.email }}</td></tr>
+  </table>
+  <button :disabled="page === 1" @click="setPage(page - 1)">Prev</button>
+  <button :disabled="page === meta?.totalPages" @click="setPage(page + 1)">Next</button>
+</template>
+```
+
+### Angular
+
+```ts
+import { UserPaginateService } from './user-paginate.service';
+
+@Component({ standalone: true, template: `...` })
+export class UsersTableComponent {
+  private svc = inject(UserPaginateService);
+  users = signal<User[]>([]);
+
+  ngOnInit() {
+    this.svc.setBaseUrl('https://api.example.com');
+    this.svc.loadUsers({ page: 1, limit: 10, sortBy: 'name', sortDir: 'ASC' })
+      .then(res => this.users.set(res.data));
+  }
+}
+```
+
+See [`example/README.md`](./example/README.md) for full setup instructions for each framework.
+
 ## Contributing
 
 Contributions are welcome. See [CONTRIBUTING.md](.github/CONTRIBUTING.md) for guidelines and [DEVELOPMENT.md](.github/DEVELOPMENT.md) for local setup and scripts.
