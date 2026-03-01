@@ -27,4 +27,4 @@ export {
   type PaginateParamsRaw,
   type SortDirection,
 } from './lib/types';
-export type { Column } from './lib/types';
+export type { Column, PaginatedLinks, PaginatedMeta, PaginatedResponse } from './lib/types';

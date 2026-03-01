@@ -62,6 +62,36 @@ export type ColumnPath<T> = Column<T> extends infer C ? (C extends string ? C : 
  */
 export type PaginateParamsRaw = Record<string, string | string[]>;
 
+/** Metadata returned in a nestjs-paginate response. */
+export interface PaginatedMeta {
+  currentPage: number;
+  itemsPerPage: number;
+  totalItems: number;
+  totalPages: number;
+  sortBy: [string, SortDirection][];
+  search?: string;
+  searchBy?: string[];
+  filter?: Record<string, string | string[]>;
+  select?: string[];
+  cursor?: string;
+}
+
+/** Pagination links returned in a nestjs-paginate response. */
+export interface PaginatedLinks {
+  first?: string;
+  previous?: string;
+  current: string;
+  next?: string;
+  last?: string;
+}
+
+/** Full nestjs-paginate response shape. */
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: PaginatedMeta;
+  links: PaginatedLinks;
+}
+
 /**
  * Input shape for building paginate params, aligned with nestjs-paginate query contract.
  */
