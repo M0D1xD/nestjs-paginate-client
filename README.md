@@ -41,28 +41,30 @@ Generated query strings match the format expected by nestjs-paginate:
 | Array contains        | `$contains` | `$contains:a,b`       |
 | OR                    | `$or`       | prefix: `$or:$eq:foo` |
 
-Nested/relation columns use dot notation: `offers.name`, `offers.price`.
+Nested/relation columns use dot notation: `courses.name`, `courses.price`.
 
 ## Usage
 
-Define your types and use the builder with typed column paths:
+Define your types and use the builder with typed column paths. The generic ensures only valid keys (and nested paths like `courses.price`) are allowed:
 
 ```ts
 import { createPaginateParams, eq, gte, in as filterIn } from 'nestjs-paginate-client';
 
-type Offer = { name: string; price: number };
-type User = { name: string; email: string; offers: Offer[] };
+type Course = { id: number; name: string; price: number };
+type UserCourse = { id: number; userId: number; courseId: number; registerDate: Date; expiryDate: Date };
+type User = { id: number; name: string; email: string; courses: UserCourse[] };
 
+// Paginate User with filters on User fields and nested courses relation
 const params = createPaginateParams<User>()
-  .page(1)
-  .limit(10)
-  .sortBy('name', 'ASC')
+  .page(1)                                    // optional
+  .limit(10)                                  // optional
+  .sortBy('name', 'ASC')                      // optional (can chain multiple)
   .sortBy('email', 'DESC')
-  .search('john')
-  .searchBy(['name', 'email'])
-  .filter('name', eq('John'))
-  .filter('offers.price', gte(100))
-  .filter('offers.name', filterIn(['A', 'B']));
+  .search('john')                             // optional
+  .searchBy('name', 'email')                  // optional
+  .filter('name', eq('John'))                 // optional (can chain multiple)
+  .filter('courses.price', gte(100))          // optional; nested: User.courses.price
+  .filter('courses.courseId', filterIn(1, 2)); // optional; nested: User.courses.courseId
 
 // Query string for URL
 const queryString = params.toQueryString();
