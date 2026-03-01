@@ -1,5 +1,6 @@
 export { createPaginateParams, PaginateQueryBuilder } from './lib/builder';
 export {
+  and,
   btw,
   buildFilterToken,
   contains,

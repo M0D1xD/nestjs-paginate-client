@@ -41,7 +41,7 @@ export function buildFilterToken(options: FilterTokenOptions): string {
   let valueStr: string;
   if (Array.isArray(value)) valueStr = value.map(String).join(',');
   else if (value !== undefined && value !== null) valueStr = String(value);
-  else return parts.join(SEP);
+  else throw new Error(`Filter operator "${operator}" requires a value, but none was provided.`);
 
   parts.push(valueStr);
   return parts.join(SEP);
@@ -156,7 +156,7 @@ export function sw(value: string): string {
  * @param values - Values that must be contained in the array.
  * @returns Filter token string.
  */
-export function contains(values: (string | number)[]): string {
+export function contains(...values: (string | number)[]): string {
   return buildFilterToken({
     operator: FilterOperator.CONTAINS,
     value: values.map(String).join(','),
@@ -181,6 +181,17 @@ export function not(token: string): string {
  */
 export function or(token: string): string {
   return `${FilterComparator.OR}${SEP}${token}`;
+}
+
+/**
+ * AND comparator. Prepends `$and:` to the given token (e.g. `and(eq('foo'))` → `$and:$eq:foo`).
+ * Useful when you need to explicitly mark a condition as AND-combined.
+ *
+ * @param token - A filter token string.
+ * @returns Filter token string.
+ */
+export function and(token: string): string {
+  return `${FilterComparator.AND}${SEP}${token}`;
 }
 
 /** Alias for `inOp` (use when `in` is not a reserved word in your context). */
