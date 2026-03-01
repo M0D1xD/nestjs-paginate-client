@@ -18,6 +18,7 @@ export {
   sw,
 } from './lib/filter';
 export type { FilterTokenOptions } from './lib/filter';
+export { fromQueryString } from './lib/parse';
 export { toQueryString } from './lib/query-string';
 export {
   FilterComparator,
