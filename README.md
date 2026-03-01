@@ -4,7 +4,11 @@
 [![npm version](https://img.shields.io/npm/v/nestjs-paginate-client.svg)](https://www.npmjs.com/package/nestjs-paginate-client)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Type-safe query string builder for backends that use [nestjs-paginate](https://github.com/ppetzold/nestjs-paginate). Build `page`, `limit`, `sortBy`, `search`, `searchBy`, `select`, and `filter` query params with TypeScript types so column names match your frontend types.
+**nestjs-paginate-client** is a lightweight, zero-dependency TypeScript library for building type-safe query strings that work seamlessly with [nestjs-paginate](https://github.com/ppetzold/nestjs-paginate) backends.
+
+Instead of constructing pagination query params by hand and hoping the column names are right, you define your entity types once and let the builder enforce valid column paths at compile time — including nested relations like `courses.price`. It covers everything nestjs-paginate understands: `page`, `limit`, `sortBy`, `search`, `searchBy`, `select`, `filter`, `cursor`, and `withDeleted`.
+
+The fluent API works the same way in any frontend stack — React, Vue, Angular, or plain TypeScript — and outputs either a query string (`?page=1&limit=10&...`) or a plain params object ready for axios or `fetch`. It also ships `fromQueryString()` to parse a URL back into a builder for round-tripping, `PaginatedResponse<T>` types matching the nestjs-paginate response shape, and helpers like `clone()` and `toURLSearchParams()` for advanced use cases.
 
 ## Installation
 
