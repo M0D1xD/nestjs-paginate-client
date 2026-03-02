@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/M0D1xD/nestjs-paginate-client/compare/v0.1.2...v0.1.3) (2026-03-02)
+
+### Bug Fixes
+
+* correct exports and types fields for dual ESM/CJS package ([2e98ce5](https://github.com/M0D1xD/nestjs-paginate-client/commit/2e98ce5e775ecad95772c1fd83f31fce19003fee))
+* drop CJS output, go ESM-only ([0eac4ee](https://github.com/M0D1xD/nestjs-paginate-client/commit/0eac4eebeb86e8903fcf1c9c6b7f3b2a61138296))
+
 ## [0.1.2](https://github.com/M0D1xD/nestjs-paginate-client/compare/v0.1.1...v0.1.2) (2026-03-01)
 
 ## [0.1.1](https://github.com/M0D1xD/nestjs-paginate-client/compare/v0.1.0...v0.1.1) (2026-03-01)
