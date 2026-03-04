@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.2.0](https://github.com/M0D1xD/nestjs-paginate-client/compare/v0.1.3...v0.2.0) (2026-03-04)
+
+### Features
+
+* add dual ESM/CJS build with proper exports map ([7a471b5](https://github.com/M0D1xD/nestjs-paginate-client/commit/7a471b5c50ca7e44bcedf6b591530745eb972d9c))
+
+### Bug Fixes
+
+* suppress tsdown CJS deprecation error for dual ESM/CJS build ([4340b59](https://github.com/M0D1xD/nestjs-paginate-client/commit/4340b59d1df0205a9720bfac9b74e0b806f83d1c))
+
 ## [0.1.3](https://github.com/M0D1xD/nestjs-paginate-client/compare/v0.1.2...v0.1.3) (2026-03-02)
 
 ### Bug Fixes
