@@ -8,4 +8,7 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   unbundle: true,
+  checks: {
+    legacyCjs: false,
+  },
 });
