@@ -36,7 +36,7 @@ import type { PaginateParamsRaw } from './types';
  * Repeated keys (e.g. sortBy, searchBy) are emitted as multiple key=value pairs.
  * Option A (clean + fast): Object.keys().flatMap()
  */
-const toQueryStringA = (params: PaginateParamsRaw): string => {
+export const toQueryStringA = (params: PaginateParamsRaw): string => {
   const pairs = Object.keys(params).flatMap((key) => {
     const val = (params as Record<string, unknown>)[key];
 
