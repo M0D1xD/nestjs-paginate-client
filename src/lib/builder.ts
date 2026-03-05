@@ -307,31 +307,34 @@ export class PaginateQueryBuilder<T extends Record<string, unknown>> {
  *   .toQueryString();
  * ```
  */
-export function createPaginateParams<T extends Record<string, unknown>>(
+export const createPaginateParams = <T extends Record<string, unknown>>(
   input?: PaginateParamsInput<T>,
-): PaginateQueryBuilder<T> {
+): PaginateQueryBuilder<T> => {
   const builder = new PaginateQueryBuilder<T>();
 
   if (!input) {
     return builder;
   }
+
   if (input.page !== undefined) {
     builder.page(input.page);
   }
   if (input.limit !== undefined) {
     builder.limit(input.limit);
   }
+
   if (input.sortBy !== undefined && input.sortBy.length > 0) {
     if (Array.isArray(input.sortBy[0])) {
-      for (const entry of input.sortBy as unknown as [ColumnPath<T>, SortDirection][]) {
-        builder.sortBy(entry[0], entry[1]);
-      }
+      (input.sortBy as unknown as [ColumnPath<T>, SortDirection][]).forEach(([col, dir]) => {
+        builder.sortBy(col, dir);
+      });
     } else {
       const [col, dir] = input.sortBy as unknown as [ColumnPath<T>, SortDirection];
 
       builder.sortBy(col, dir);
     }
   }
+
   if (input.search !== undefined) {
     builder.search(input.search);
   }
@@ -347,14 +350,14 @@ export function createPaginateParams<T extends Record<string, unknown>>(
   if (input.withDeleted !== undefined) {
     builder.withDeleted(input.withDeleted);
   }
+
   if (input.filter !== undefined) {
-    for (const [col, token] of Object.entries(input.filter) as [
-      ColumnPath<T>,
-      string | string[],
-    ][]) {
-      builder.filter(col, token);
-    }
+    const filter = input.filter as unknown as Record<string, string | string[]>;
+
+    Object.keys(filter).forEach((col) => {
+      builder.filter(col as ColumnPath<T>, filter[col]);
+    });
   }
 
   return builder;
-}
+};
