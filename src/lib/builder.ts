@@ -266,16 +266,19 @@ export class PaginateQueryBuilder<T extends Record<string, unknown>> {
    */
   toURLSearchParams(): URLSearchParams {
     const usp = new URLSearchParams();
+    const params = this.toParams();
 
-    for (const [key, val] of Object.entries(this.toParams())) {
+    Object.keys(params).forEach((key) => {
+      const val = params[key];
+
       if (Array.isArray(val)) {
-        for (const v of val) {
+        val.forEach((v) => {
           usp.append(key, v);
-        }
+        });
       } else {
         usp.append(key, val);
       }
-    }
+    });
 
     return usp;
   }
