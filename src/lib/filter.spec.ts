@@ -1,22 +1,22 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
   and,
+  btw,
   buildFilterToken,
+  contains,
   eq,
-  gte,
   gt,
+  gte,
+  ilike,
+  inOp,
   lt,
   lte,
-  inOp,
-  nullOp,
-  btw,
-  ilike,
-  sw,
-  contains,
   not,
+  nullOp,
   or,
+  sw,
 } from './filter';
-import { FilterOperator, FilterComparator, FilterSuffix } from './types';
+import { FilterComparator, FilterOperator, FilterSuffix } from './types';
 
 describe('buildFilterToken', () => {
   it('builds $eq:value', () => {

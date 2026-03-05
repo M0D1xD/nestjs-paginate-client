@@ -32,18 +32,32 @@ export function buildFilterToken(options: FilterTokenOptions): string {
   const { comparator, suffix, operator, value } = options;
   const parts: string[] = [];
 
-  if (comparator && comparator !== FilterComparator.AND) parts.push(comparator);
-  if (suffix) parts.push(suffix);
+  if (comparator && comparator !== FilterComparator.AND) {
+    parts.push(comparator);
+  }
+
+  if (suffix) {
+    parts.push(suffix);
+  }
+
   parts.push(operator);
 
-  if (operator === FilterOperator.NULL) return parts.join(SEP);
+  if (operator === FilterOperator.NULL) {
+    return parts.join(SEP);
+  }
 
   let valueStr: string;
-  if (Array.isArray(value)) valueStr = value.map(String).join(',');
-  else if (value !== undefined && value !== null) valueStr = String(value);
-  else throw new Error(`Filter operator "${operator}" requires a value, but none was provided.`);
+
+  if (Array.isArray(value)) {
+    valueStr = value.map(String).join(',');
+  } else if (value !== undefined && value !== null) {
+    valueStr = String(value);
+  } else {
+    throw new Error(`Filter operator "${operator}" requires a value, but none was provided.`);
+  }
 
   parts.push(valueStr);
+
   return parts.join(SEP);
 }
 
