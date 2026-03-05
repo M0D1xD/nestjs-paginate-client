@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.3.0](https://github.com/M0D1xD/nestjs-paginate-client/compare/v0.2.0...v0.3.0) (2026-03-05)
+
+### Features
+
+* export toQueryStringA function for external use ([2d5e352](https://github.com/M0D1xD/nestjs-paginate-client/commit/2d5e352f7bf78efa8cebded7cd5f57955ce78765))
+
 ## [0.2.0](https://github.com/M0D1xD/nestjs-paginate-client/compare/v0.1.3...v0.2.0) (2026-03-04)
 
 ### Features
