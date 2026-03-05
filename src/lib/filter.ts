@@ -63,8 +63,8 @@ export const buildFilterToken = (options: FilterTokenOptions): string => {
 /**
  * Equals. Produces a token like `$eq:value`.
  */
-export const eq = (value: string | number): string => {
-  return buildFilterToken({ operator: FilterOperator.EQ, value });
+export const eq = (value: string | number | boolean): string => {
+  return buildFilterToken({ operator: FilterOperator.EQ, value: String(value) });
 };
 
 /**

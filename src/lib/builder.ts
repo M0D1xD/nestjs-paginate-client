@@ -8,7 +8,7 @@ import type { ColumnPath, PaginateParamsInput, PaginateParamsRaw, SortDirection 
  *
  * @typeParam T - The entity type (e.g. `User`). Column names are constrained to {@link ColumnPath}<T>.
  */
-export class PaginateQueryBuilder<T extends Record<string, unknown>> {
+export class PaginateQueryBuilder<T extends object = Record<string, unknown>> {
   /**
    * Current page number to retrieve (1-based).
    * Set via {@link page}.
@@ -295,6 +295,14 @@ export class PaginateQueryBuilder<T extends Record<string, unknown>> {
 }
 
 /**
+ * Type guard to distinguish between a single sortBy tuple and an array of tuples.
+ * This allows TypeScript to properly narrow the union type without `as unknown as` casts.
+ */
+const isSortByArray = <T extends Record<string, unknown>>(
+  s: [ColumnPath<T>, SortDirection][] | [ColumnPath<T>, SortDirection],
+): s is [ColumnPath<T>, SortDirection][] => Array.isArray(s[0]);
+
+/**
  * Create a new paginate query builder for entity type `T`, optionally pre-populated from a plain input object.
  * Column names in `sortBy`, `searchBy`, `select`, and `filter` will be type-checked against {@link ColumnPath}<T>.
  *
@@ -327,12 +335,12 @@ export const createPaginateParams = <T extends Record<string, unknown>>(
   }
 
   if (input.sortBy !== undefined && input.sortBy.length > 0) {
-    if (Array.isArray(input.sortBy[0])) {
-      (input.sortBy as unknown as [ColumnPath<T>, SortDirection][]).forEach(([col, dir]) => {
+    if (isSortByArray<T>(input.sortBy)) {
+      input.sortBy.forEach(([col, dir]) => {
         builder.sortBy(col, dir);
       });
     } else {
-      const [col, dir] = input.sortBy as unknown as [ColumnPath<T>, SortDirection];
+      const [col, dir] = input.sortBy;
 
       builder.sortBy(col, dir);
     }
@@ -355,10 +363,10 @@ export const createPaginateParams = <T extends Record<string, unknown>>(
   }
 
   if (input.filter !== undefined) {
-    const filter = input.filter as unknown as Record<string, string | string[]>;
-
-    Object.keys(filter).forEach((col) => {
-      builder.filter(col as ColumnPath<T>, filter[col]);
+    Object.entries(input.filter).forEach(([col, token]) => {
+      if (token !== undefined) {
+        builder.filter(col as ColumnPath<T>, token as string | string[]);
+      }
     });
   }
 
