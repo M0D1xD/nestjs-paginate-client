@@ -105,6 +105,7 @@ describe('filter helpers', () => {
 
   it('btw()', () => {
     expect(btw(4, 5)).toBe('$btw:4,5');
+    expect(btw('2022-02-02', '2022-02-10')).toBe('$btw:2022-02-02,2022-02-10');
   });
 
   it('ilike() and sw()', () => {
