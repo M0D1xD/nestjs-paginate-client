@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.4.0](https://github.com/M0D1xD/nestjs-paginate-client/compare/v0.3.1...v0.4.0) (2026-03-07)
+
+### Features
+
+* support string values in btw (between) operator ([8064246](https://github.com/M0D1xD/nestjs-paginate-client/commit/806424682e6436190c4226e9cdb038955c39c564))
+
 ## [0.3.1](https://github.com/M0D1xD/nestjs-paginate-client/compare/v0.3.0...v0.3.1) (2026-03-05)
 
 ## [0.3.0](https://github.com/M0D1xD/nestjs-paginate-client/compare/v0.2.0...v0.3.0) (2026-03-05)
