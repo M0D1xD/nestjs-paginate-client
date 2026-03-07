@@ -12,7 +12,7 @@ export interface FilterTokenOptions {
   /** The filter operator (e.g. `$eq`, `$gte`, `$in`). */
   operator: FilterOperator;
   /** Value for the operator. Omit for `$null`; use `[min, max]` for `$btw`; comma-separated string or array for `$in`/`$contains`. */
-  value?: string | number | [number, number];
+  value?: string | number | [number, number] | [string, string];
 }
 
 const SEP = ':';
@@ -114,9 +114,10 @@ export const nullOp = (): string => {
 
 /**
  * Between (inclusive). Produces `$btw:min,max`.
+ * Accepts either two numbers or two strings (e.g. date strings).
  */
-export const btw = (min: number, max: number): string => {
-  return buildFilterToken({ operator: FilterOperator.BTW, value: [min, max] });
+export const btw = (min: number | string, max: number | string): string => {
+  return buildFilterToken({ operator: FilterOperator.BTW, value: [min, max] as [number, number] | [string, string] });
 };
 
 /**
