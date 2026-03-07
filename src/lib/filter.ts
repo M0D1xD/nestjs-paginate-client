@@ -117,7 +117,10 @@ export const nullOp = (): string => {
  * Accepts either two numbers or two strings (e.g. date strings).
  */
 export const btw = (min: number | string, max: number | string): string => {
-  return buildFilterToken({ operator: FilterOperator.BTW, value: [min, max] as [number, number] | [string, string] });
+  return buildFilterToken({
+    operator: FilterOperator.BTW,
+    value: [min, max] as [number, number] | [string, string],
+  });
 };
 
 /**
