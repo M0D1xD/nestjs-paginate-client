@@ -1,9 +1,7 @@
-import { describe, it, expect } from 'vitest';
-import { createPaginateParams, eq, gte, inOp, or } from '..';
+import { describe, expect, it } from 'vitest';
+import { createPaginateParams } from './builder';
+import { eq, gte, ilike, inOp, not, or, sw } from './filter';
 
-// Course is the entity referenced by UserCourse.courseId (kept for domain typing)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- domain type for documentation
-type Course = { id: number; name: string; price: number };
 type UserCourse = {
   id: number;
   userId: number;
@@ -11,7 +9,15 @@ type UserCourse = {
   registerDate: Date;
   expiryDate: Date;
 };
-type User = { id: number; name: string; email: string; courses: UserCourse[] };
+
+type Address = {
+  street: string;
+  city: string;
+  state: string;
+  zip: string;
+};
+
+type User = { id: number; name: string; email: string; courses: UserCourse[]; address: Address };
 
 describe('PaginateQueryBuilder', () => {
   it('builds params with page and limit', () => {
@@ -142,5 +148,104 @@ describe('PaginateQueryBuilder', () => {
   it('createPaginateParams() with single sortBy tuple', () => {
     const params = createPaginateParams<User>({ sortBy: ['name', 'ASC'] }).toParams();
     expect(params.sortBy).toEqual(['name:ASC']);
+  });
+
+  it('removeFilter() removes a previously added filter', () => {
+    const params = createPaginateParams<User>()
+      .filter('name', eq('John'))
+      .filter('courses.courseId', gte(1))
+      .removeFilter('name')
+      .toParams();
+
+    expect(params['filter.name']).toBeUndefined();
+    expect(params['filter.courses.courseId']).toBe('$gte:1');
+  });
+
+  it('removeFilter() is a no-op when column has no filter', () => {
+    const params = createPaginateParams<User>()
+      .filter('name', eq('John'))
+      .removeFilter('courses.courseId')
+      .toParams();
+
+    expect(params['filter.name']).toBe('$eq:John');
+    expect(params['filter.courses.courseId']).toBeUndefined();
+  });
+
+  it('removeFilter() removes a multi-value (OR) filter', () => {
+    const params = createPaginateParams<User>()
+      .filter('name', or(eq('A')))
+      .filter('name', or(eq('B')))
+      .removeFilter('name')
+      .toParams();
+
+    expect(params['filter.name']).toBeUndefined();
+  });
+
+  describe('address filters', () => {
+    it('filters by exact city', () => {
+      const params = createPaginateParams<User>().filter('address.city', eq('Berlin')).toParams();
+
+      expect(params['filter.address.city']).toBe('$eq:Berlin');
+    });
+
+    it('filters by city with case-insensitive partial match', () => {
+      const params = createPaginateParams<User>().filter('address.city', ilike('ber')).toParams();
+
+      expect(params['filter.address.city']).toBe('$ilike:ber');
+    });
+
+    it('filters by street starts-with', () => {
+      const params = createPaginateParams<User>().filter('address.street', sw('Main')).toParams();
+
+      expect(params['filter.address.street']).toBe('$sw:Main');
+    });
+
+    it('filters by state using OR across multiple values', () => {
+      const params = createPaginateParams<User>()
+        .filter('address.state', or(eq('NY')))
+        .filter('address.state', or(eq('CA')))
+        .toParams();
+
+      expect(params['filter.address.state']).toEqual(['$or:$eq:NY', '$or:$eq:CA']);
+    });
+
+    it('filters by zip using $in', () => {
+      const params = createPaginateParams<User>()
+        .filter('address.zip', inOp(['10001', '10002', '90210']))
+        .toParams();
+
+      expect(params['filter.address.zip']).toBe('$in:10001,10002,90210');
+    });
+
+    it('filters by city negated (not Berlin)', () => {
+      const params = createPaginateParams<User>()
+        .filter('address.city', not(eq('Berlin')))
+        .toParams();
+
+      expect(params['filter.address.city']).toBe('$not:$eq:Berlin');
+    });
+
+    it('filters by multiple address fields simultaneously', () => {
+      const params = createPaginateParams<User>()
+        .filter('address.city', eq('Berlin'))
+        .filter('address.state', eq('BE'))
+        .filter('address.zip', eq('10115'))
+        .toParams();
+
+      expect(params['filter.address.city']).toBe('$eq:Berlin');
+      expect(params['filter.address.state']).toBe('$eq:BE');
+      expect(params['filter.address.zip']).toBe('$eq:10115');
+    });
+
+    it('removeFilter() clears one address field without affecting others', () => {
+      const params = createPaginateParams<User>()
+        .filter('address.city', eq('Berlin'))
+        .filter('address.state', eq('BE'))
+        .removeFilter('address.city')
+        .toParams();
+
+      expect(params['filter.address.city']).toBeUndefined();
+      expect(params['filter.address.state']).toBe('$eq:BE');
+    });
   });
 });

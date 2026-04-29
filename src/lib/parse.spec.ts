@@ -27,6 +27,11 @@ describe('fromQueryString', () => {
     expect(params.cursor).toBe('abc123');
   });
 
+  it('treats + as space in query values', () => {
+    const params = fromQueryString<User>('?search=John+Doe').toParams();
+    expect(params.search).toBe('John Doe');
+  });
+
   it('parses repeated searchBy keys', () => {
     const params = fromQueryString<User>('?searchBy=name&searchBy=email').toParams();
     expect(params.searchBy).toEqual(['name', 'email']);
@@ -57,6 +62,13 @@ describe('fromQueryString', () => {
       '?filter.name=%24or%3A%24eq%3AA&filter.name=%24or%3A%24eq%3AB',
     ).toParams();
     expect(params['filter.name']).toEqual(['$or:$eq:A', '$or:$eq:B']);
+  });
+
+  it('skips malformed key/value pairs and keeps valid ones', () => {
+    const params = fromQueryString<User>('?search=%E0%A4%A&page=2&limit=%E0%A4%A').toParams();
+    expect(params.search).toBeUndefined();
+    expect(params.page).toBe('2');
+    expect(params.limit).toBeUndefined();
   });
 
   it('round-trips through toQueryString and back', () => {

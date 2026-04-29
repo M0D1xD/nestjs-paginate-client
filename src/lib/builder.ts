@@ -168,6 +168,19 @@ export class PaginateQueryBuilder<T extends object = Record<string, unknown>> {
   }
 
   /**
+   * Remove a previously added filter for a column.
+   * If the column has no filter, this is a no-op.
+   *
+   * @param column - Column path whose filter should be removed.
+   * @returns This builder for chaining.
+   */
+  removeFilter(column: ColumnPath<T>): this {
+    delete this._filter[column as string];
+
+    return this;
+  }
+
+  /**
    * Set the cursor for cursor-based pagination (next/previous page).
    * Use the value from the previous response (e.g. `meta.cursor` or `links.next` query string).
    *
