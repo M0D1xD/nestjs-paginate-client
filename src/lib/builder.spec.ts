@@ -1,9 +1,7 @@
-import { describe, it, expect } from 'vitest';
-import { createPaginateParams, eq, gte, ilike, inOp, not, or, sw } from '..';
+import { describe, expect, it } from 'vitest';
+import { createPaginateParams } from './builder';
+import { eq, gte, ilike, inOp, not, or, sw } from './filter';
 
-// Course is the entity referenced by UserCourse.courseId (kept for domain typing)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- domain type for documentation
-type Course = { id: number; name: string; price: number };
 type UserCourse = {
   id: number;
   userId: number;
@@ -185,25 +183,19 @@ describe('PaginateQueryBuilder', () => {
 
   describe('address filters', () => {
     it('filters by exact city', () => {
-      const params = createPaginateParams<User>()
-        .filter('address.city', eq('Berlin'))
-        .toParams();
+      const params = createPaginateParams<User>().filter('address.city', eq('Berlin')).toParams();
 
       expect(params['filter.address.city']).toBe('$eq:Berlin');
     });
 
     it('filters by city with case-insensitive partial match', () => {
-      const params = createPaginateParams<User>()
-        .filter('address.city', ilike('ber'))
-        .toParams();
+      const params = createPaginateParams<User>().filter('address.city', ilike('ber')).toParams();
 
       expect(params['filter.address.city']).toBe('$ilike:ber');
     });
 
     it('filters by street starts-with', () => {
-      const params = createPaginateParams<User>()
-        .filter('address.street', sw('Main'))
-        .toParams();
+      const params = createPaginateParams<User>().filter('address.street', sw('Main')).toParams();
 
       expect(params['filter.address.street']).toBe('$sw:Main');
     });
