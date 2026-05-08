@@ -64,10 +64,17 @@ describe('PaginateQueryBuilder', () => {
     expect(params['filter.courses.courseId']).toBe('$in:1,2');
   });
 
-  it('accumulates multiple filter calls on the same column into an array', () => {
+  it('replaces filter value when the same column is set twice', () => {
     const params = createPaginateParams<User>()
       .filter('name', or(eq('A')))
       .filter('name', or(eq('B')))
+      .toParams();
+    expect(params['filter.name']).toBe('$or:$eq:B');
+  });
+
+  it('accepts an array token for OR filters on a single column', () => {
+    const params = createPaginateParams<User>()
+      .filter('name', [or(eq('A')), or(eq('B'))])
       .toParams();
     expect(params['filter.name']).toEqual(['$or:$eq:A', '$or:$eq:B']);
   });
@@ -115,7 +122,7 @@ describe('PaginateQueryBuilder', () => {
     expect(original.toParams().page).toBe('1');
     expect(original.toParams()['filter.name']).toBe('$eq:Alice');
     expect(clone.toParams().page).toBe('2');
-    expect(clone.toParams()['filter.name']).toEqual(['$eq:Alice', '$eq:Bob']);
+    expect(clone.toParams()['filter.name']).toBe('$eq:Bob');
   });
 
   it('toURLSearchParams() returns URLSearchParams with correct entries', () => {
@@ -202,8 +209,7 @@ describe('PaginateQueryBuilder', () => {
 
     it('filters by state using OR across multiple values', () => {
       const params = createPaginateParams<User>()
-        .filter('address.state', or(eq('NY')))
-        .filter('address.state', or(eq('CA')))
+        .filter('address.state', [or(eq('NY')), or(eq('CA'))])
         .toParams();
 
       expect(params['filter.address.state']).toEqual(['$or:$eq:NY', '$or:$eq:CA']);

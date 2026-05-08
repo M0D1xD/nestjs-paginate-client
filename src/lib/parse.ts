@@ -16,7 +16,7 @@ import type { ColumnPath, SortDirection } from './types';
  * const builder = fromQueryString<User>('?page=2&filter.name=%24eq%3AJohn');
  * builder.limit(10).toQueryString();
  * ```
-//  */
+ */
 
 export const fromQueryString = <T extends Record<string, unknown>>(
   qs: string,
@@ -131,7 +131,8 @@ export const fromQueryString = <T extends Record<string, unknown>>(
   }
 
   Object.keys(filterMap).forEach((col) => {
-    builder.filter(col as ColumnPath<T>, filterMap[col]);
+    const tokens = filterMap[col];
+    builder.filter(col as ColumnPath<T>, tokens.length === 1 ? tokens[0] : tokens);
   });
 
   return builder;
