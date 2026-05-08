@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "skills": {
+    "ts-library": {
+      "source": "onmax/nuxt-skills",
+      "sourceType": "github",
+      "computedHash": "4c33b682fad3e3323e4e8c71ee019f380699802030d147469f4564afe04fb867"
+    },
+    "tsdown": {
+      "source": "rolldown/tsdown",
+      "sourceType": "github",
+      "computedHash": "f381323f26079d273693f9f8ec9a85a64cace1f59d3ccff2367eaa8f579a186f"
+    }
+  }
+}
