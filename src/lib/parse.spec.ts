@@ -79,8 +79,7 @@ describe('fromQueryString', () => {
       .search('test')
       .searchBy(['name', 'email'])
       .select(['id', 'name'])
-      .filter('name', or(eq('A')))
-      .filter('name', or(eq('B')));
+      .filter('name', [or(eq('A')), or(eq('B'))]);
 
     const qs = original.toQueryString();
     const parsed = fromQueryString<User>(qs);

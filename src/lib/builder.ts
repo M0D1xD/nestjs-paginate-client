@@ -148,21 +148,7 @@ export class PaginateQueryBuilder<T extends object = Record<string, unknown>> {
    * @returns This builder for chaining.
    */
   filter(column: ColumnPath<T>, token: string | string[]): this {
-    const key = column as string;
-    const existing = this._filter[key];
-    const next = Array.isArray(token) ? token : [token];
-
-    let value: string | string[];
-
-    if (existing) {
-      const existingArr = Array.isArray(existing) ? existing : [existing];
-
-      value = [...existingArr, ...next];
-    } else {
-      value = next.length === 1 ? next[0] : next;
-    }
-
-    this._filter[key] = value;
+    this._filter[column as string] = token;
 
     return this;
   }
