@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.5.0](https://github.com/M0D1xD/nestjs-paginate-client/compare/v0.4.0...v0.5.0) (2026-04-29)
+
+### Features
+
+* add removeFilter method and enhance address filtering in PaginateQueryBuilder ([00847fd](https://github.com/M0D1xD/nestjs-paginate-client/commit/00847fdff4c546409cbad67054d58ffdb94e0b47))
+
 ## [0.4.0](https://github.com/M0D1xD/nestjs-paginate-client/compare/v0.3.1...v0.4.0) (2026-03-07)
 
 ### Features
