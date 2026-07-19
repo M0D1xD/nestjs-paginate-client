@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { leaf, or } from './expression';
-import { fromQueryString } from './parse';
 import { createPaginateParams } from './builder';
+import { and, leaf, or } from './expression';
 import { eq } from './filter';
+import { nextPageQueryString, parsePaginatedLinks } from './links';
+import { fromQueryString, fromUrl } from './parse';
 
 type User = { id: number; name: string; email: string };
 
@@ -93,5 +94,42 @@ describe('fromQueryString', () => {
     const parsed = fromQueryString<User>(qs);
 
     expect(parsed.toParams()).toEqual(original.toParams());
+  });
+});
+
+describe('fromUrl and links', () => {
+  it('fromUrl extracts query from absolute URL', () => {
+    const params = fromUrl<User>('https://api.example.com/users?page=3&limit=10').toParams();
+    expect(params.page).toBe('3');
+    expect(params.limit).toBe('10');
+  });
+
+  it('parsePaginatedLinks builds next page params', () => {
+    const links = parsePaginatedLinks<User>({
+      current: 'https://api.example.com/users?page=1&limit=10',
+      next: 'https://api.example.com/users?page=2&limit=10',
+    });
+    expect(links.next?.toParams().page).toBe('2');
+    expect(
+      nextPageQueryString({ current: links.current.toQueryString(), next: 'https://x/?page=2' }),
+    ).toContain('page=2');
+  });
+
+  it('golden contract: typical list query shape', () => {
+    const qs = createPaginateParams<User>({
+      page: 2,
+      limit: 5,
+      sortBy: [['name', 'DESC']],
+      search: 'i',
+      filter: { name: eq('Milo') },
+      filterExpression: and(leaf('email', eq('a@b.c'))),
+    }).toQueryString();
+
+    expect(qs).toContain('page=2');
+    expect(qs).toContain('limit=5');
+    expect(qs).toContain('sortBy=name%3ADESC');
+    expect(qs).toContain('search=i');
+    expect(qs).toContain('filter.name=');
+    expect(qs).toContain('filter=');
   });
 });

@@ -122,3 +122,21 @@ export const fromQueryString = <T extends Record<string, unknown>>(
 
   return builder;
 };
+
+/**
+ * Parse a full URL (or path + query) into a {@link PaginateQueryBuilder}.
+ */
+export const fromUrl = <T extends Record<string, unknown>>(
+  url: string,
+): PaginateQueryBuilder<T> => {
+  try {
+    const parsed = new URL(url, 'http://localhost');
+    return fromQueryString<T>(parsed.search);
+  } catch {
+    const qIdx = url.indexOf('?');
+    if (qIdx === -1) {
+      return fromQueryString<T>('');
+    }
+    return fromQueryString<T>(url.slice(qIdx));
+  }
+};

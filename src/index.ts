@@ -28,7 +28,9 @@ export {
   sw,
 } from './lib/filter';
 export type { FilterTokenOptions } from './lib/filter';
-export { fromQueryString } from './lib/parse';
+export { fromLink, nextPageQueryString, parsePaginatedLinks } from './lib/links';
+export type { ParsedPaginatedLinks } from './lib/links';
+export { fromQueryString, fromUrl } from './lib/parse';
 export { toQueryString } from './lib/query-string';
 export {
   FilterOperator,
