@@ -68,10 +68,13 @@ export type PaginateParamsRaw = Record<string, string | string[]>;
 
 /** Metadata returned in a nestjs-paginate response. */
 export interface PaginatedMeta {
-  currentPage: number;
   itemsPerPage: number;
-  totalItems: number;
-  totalPages: number;
+  /** Omitted in cursor pagination mode. */
+  totalItems?: number;
+  /** Omitted in cursor pagination mode. */
+  currentPage?: number;
+  /** Omitted in cursor pagination mode. */
+  totalPages?: number;
   sortBy: [string, SortDirection][];
   search?: string;
   searchBy?: string[];

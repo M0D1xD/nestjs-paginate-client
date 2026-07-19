@@ -49,6 +49,13 @@ describe('PaginateQueryBuilder', () => {
     expect(params.sortBy).toEqual(['name:ASC', 'email:DESC']);
   });
 
+  it('builds polymorphic sortBy', () => {
+    const params = createPaginateParams<User>()
+      .sortByPolymorphic(['name', 'email'], 'DESC')
+      .toParams();
+    expect(params.sortBy).toEqual(['name~email:DESC']);
+  });
+
   it('builds search and searchBy', () => {
     const params = createPaginateParams<User>()
       .search('john')
@@ -148,6 +155,15 @@ describe('PaginateQueryBuilder', () => {
     expect(original.toParams()['filter.name']).toBe('$eq:Alice');
     expect(clone.toParams().page).toBe('2');
     expect(clone.toParams()['filter.name']).toBe('$eq:Bob');
+  });
+
+  it('with() merges immutably', () => {
+    const original = createPaginateParams<User>().page(1).sortBy('name', 'ASC');
+    const next = original.with({ page: 2, sortBy: ['email', 'DESC'] });
+    expect(original.toParams().page).toBe('1');
+    expect(original.toParams().sortBy).toEqual(['name:ASC']);
+    expect(next.toParams().page).toBe('2');
+    expect(next.toParams().sortBy).toEqual(['email:DESC']);
   });
 
   it('toURLSearchParams() returns URLSearchParams with correct entries', () => {
