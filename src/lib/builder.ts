@@ -52,6 +52,17 @@ export class PaginateQueryBuilder<T extends object = Record<string, unknown>> {
   }
 
   /**
+   * Add a polymorphic sort (`colA~colB:DIRECTION`) for inheritance / joined polymorphic columns.
+   */
+  sortByPolymorphic(columns: ColumnPath<T>[], direction: SortDirection): this {
+    if (columns.length === 0) {
+      throw new Error('sortByPolymorphic() requires at least one column');
+    }
+    this._sortBy.push([columns.join('~'), direction]);
+    return this;
+  }
+
+  /**
    * Set the search term to filter results across searchable columns.
    */
   search(term: string): this {
@@ -150,6 +161,25 @@ export class PaginateQueryBuilder<T extends object = Record<string, unknown>> {
     copy._cursor = this._cursor;
     copy._withDeleted = this._withDeleted;
     return copy;
+  }
+
+  /**
+   * Return a new builder with `partial` merged on top (immutable update for UI stores).
+   */
+  with(partial: PaginateParamsInput<T>): PaginateQueryBuilder<T> {
+    return this.clone().merge(partial);
+  }
+
+  /**
+   * Mutate this builder by applying fields from `partial`.
+   * List fields (`sortBy`) are replaced when provided; filters are overlaid by column.
+   */
+  merge(partial: PaginateParamsInput<T>): this {
+    if (partial.sortBy !== undefined) {
+      this._sortBy = [];
+    }
+    applyInput(this, partial);
+    return this;
   }
 
   /**
