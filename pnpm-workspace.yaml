@@ -1,2 +1,4 @@
+minimumReleaseAgeExclude:
+  - tsdown@0.22.11
 onlyBuiltDependencies:
   - esbuild
