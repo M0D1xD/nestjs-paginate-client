@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.0](https://github.com/M0D1xD/nestjs-paginate-client/compare/v1.0.1...v1.1.0) (2026-07-19)
+
+### Features
+
+* polymorphic sort, immutable merge, cursor-mode meta types ([4cdfa28](https://github.com/M0D1xD/nestjs-paginate-client/commit/4cdfa28cb39d2c24cf1beb273aa6777c86f2df69))
+
 ## [0.5.2](https://github.com/M0D1xD/nestjs-paginate-client/compare/v0.5.1...v0.5.2) (2026-05-08)
 
 ## [0.5.0](https://github.com/M0D1xD/nestjs-paginate-client/compare/v0.4.0...v0.5.0) (2026-04-29)
