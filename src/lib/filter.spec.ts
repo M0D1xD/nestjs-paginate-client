@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  and,
+  all,
+  any,
   btw,
   buildFilterToken,
   contains,
@@ -11,12 +12,12 @@ import {
   inOp,
   lt,
   lte,
+  none,
   not,
   nullOp,
-  or,
   sw,
 } from './filter';
-import { FilterComparator, FilterOperator, FilterSuffix } from './types';
+import { FilterOperator, FilterQuantifier, FilterSuffix } from './types';
 
 describe('buildFilterToken', () => {
   it('builds $eq:value', () => {
@@ -40,14 +41,24 @@ describe('buildFilterToken', () => {
     expect(buildFilterToken({ operator: FilterOperator.BTW, value: [1, 10] })).toBe('$btw:1,10');
   });
 
-  it('builds with comparator $or', () => {
+  it('builds with quantifier $all', () => {
     expect(
       buildFilterToken({
-        comparator: FilterComparator.OR,
+        quantifier: FilterQuantifier.ALL,
         operator: FilterOperator.EQ,
         value: 'foo',
       }),
-    ).toBe('$or:$eq:foo');
+    ).toBe('$all:$eq:foo');
+  });
+
+  it('omits $any quantifier (default)', () => {
+    expect(
+      buildFilterToken({
+        quantifier: FilterQuantifier.ANY,
+        operator: FilterOperator.EQ,
+        value: 'foo',
+      }),
+    ).toBe('$eq:foo');
   });
 
   it('builds with suffix $not', () => {
@@ -60,21 +71,17 @@ describe('buildFilterToken', () => {
     ).toBe('$not:$eq:x');
   });
 
-  it('does not emit $and when comparator is AND (default behavior)', () => {
-    expect(
-      buildFilterToken({
-        comparator: FilterComparator.AND,
-        operator: FilterOperator.EQ,
-        value: 'foo',
-      }),
-    ).toBe('$eq:foo');
-  });
-
   it('throws when non-null operator receives no value', () => {
     expect(() => buildFilterToken({ operator: FilterOperator.EQ })).toThrow(
       'Filter operator "$eq" requires a value, but none was provided.',
     );
     expect(() => buildFilterToken({ operator: FilterOperator.GTE })).toThrow();
+  });
+
+  it('throws when array value is empty', () => {
+    expect(() => buildFilterToken({ operator: FilterOperator.IN, value: [] })).toThrow(
+      'Filter operator "$in" requires a non-empty value list.',
+    );
   });
 });
 
@@ -97,6 +104,7 @@ describe('filter helpers', () => {
   it('inOp()', () => {
     expect(inOp([1, 2, 3])).toBe('$in:1,2,3');
     expect(inOp(['a', 'b'])).toBe('$in:a,b');
+    expect(() => inOp([])).toThrow();
   });
 
   it('nullOp()', () => {
@@ -116,6 +124,7 @@ describe('filter helpers', () => {
   it('contains() variadic', () => {
     expect(contains(1, 2)).toBe('$contains:1,2');
     expect(contains('a', 'b', 'c')).toBe('$contains:a,b,c');
+    expect(() => contains()).toThrow();
   });
 
   it('not()', () => {
@@ -124,11 +133,9 @@ describe('filter helpers', () => {
     expect(not(nullOp())).toBe('$not:$null');
   });
 
-  it('or()', () => {
-    expect(or(eq('foo'))).toBe('$or:$eq:foo');
-  });
-
-  it('and()', () => {
-    expect(and(eq('foo'))).toBe('$and:$eq:foo');
+  it('any(), all(), none()', () => {
+    expect(any(eq('Ball'))).toBe('$any:$eq:Ball');
+    expect(all(eq('Ball'))).toBe('$all:$eq:Ball');
+    expect(none(eq('Ball'))).toBe('$none:$eq:Ball');
   });
 });
