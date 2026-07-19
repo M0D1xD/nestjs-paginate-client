@@ -83,3 +83,20 @@ Add `--watch` to keep the type checker running in a watch mode that updates the 
 ```shell
 pnpm tsc --watch
 ```
+
+## Releasing
+
+Do **not** bump `package.json` or edit `CHANGELOG.md` in feature PRs.
+
+1. Use a [conventional commit](https://www.conventionalcommits.org/) PR title (`feat:`, `fix:`, `feat!:`, etc.).
+2. Squash-merge into `main` so the merge commit uses that title.
+3. After CI passes on `main`, the [Publish](./workflows/release.yaml) workflow runs [release-it](https://github.com/release-it/release-it), which:
+   - infers patch / minor / major from commits since the last tag
+   - updates `CHANGELOG.md` and `package.json`
+   - commits, tags `vX.Y.Z`, creates a GitHub Release, and publishes to npm
+
+For a local dry-run or emergency release:
+
+```shell
+pnpm release
+```
