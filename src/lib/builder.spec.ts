@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { createPaginateParams } from './builder';
-import { eq, gte, ilike, inOp, not, or, sw } from './filter';
+import {
+  and,
+  leaf,
+  notExpr,
+  or,
+  parseFilterExpression,
+  stringifyFilterExpression,
+} from './expression';
+import { eq, gte, ilike, inOp, none, not, sw } from './filter';
 
 type UserCourse = {
   id: number;
@@ -17,7 +25,14 @@ type Address = {
   zip: string;
 };
 
-type User = { id: number; name: string; email: string; courses: UserCourse[]; address: Address };
+type User = {
+  id: number;
+  name: string;
+  email: string;
+  age: number;
+  courses: UserCourse[];
+  address: Address;
+};
 
 describe('PaginateQueryBuilder', () => {
   it('builds params with page and limit', () => {
@@ -66,17 +81,27 @@ describe('PaginateQueryBuilder', () => {
 
   it('replaces filter value when the same column is set twice', () => {
     const params = createPaginateParams<User>()
-      .filter('name', or(eq('A')))
-      .filter('name', or(eq('B')))
+      .filter('name', eq('A'))
+      .filter('name', eq('B'))
       .toParams();
-    expect(params['filter.name']).toBe('$or:$eq:B');
+    expect(params['filter.name']).toBe('$eq:B');
   });
 
-  it('accepts an array token for OR filters on a single column', () => {
+  it('accepts an array token for AND filters on a single column', () => {
     const params = createPaginateParams<User>()
-      .filter('name', [or(eq('A')), or(eq('B'))])
+      .filter('name', [eq('A'), eq('B')])
       .toParams();
-    expect(params['filter.name']).toEqual(['$or:$eq:A', '$or:$eq:B']);
+    expect(params['filter.name']).toEqual(['$eq:A', '$eq:B']);
+  });
+
+  it('builds filter= expression', () => {
+    const params = createPaginateParams<User>()
+      .filter('age', gte(3))
+      .filterExpression(and(leaf('name', eq('Milo')), leaf('email', eq('a@b.c'))))
+      .toParams();
+
+    expect(params['filter.age']).toBe('$gte:3');
+    expect(params.filter).toBe('name=$eq:Milo AND email=$eq:a@b.c');
   });
 
   it('toQueryString produces valid query string', () => {
@@ -178,41 +203,28 @@ describe('PaginateQueryBuilder', () => {
     expect(params['filter.courses.courseId']).toBeUndefined();
   });
 
-  it('removeFilter() removes a multi-value (OR) filter', () => {
-    const params = createPaginateParams<User>()
-      .filter('name', or(eq('A')))
-      .filter('name', or(eq('B')))
-      .removeFilter('name')
-      .toParams();
-
-    expect(params['filter.name']).toBeUndefined();
-  });
-
   describe('address filters', () => {
     it('filters by exact city', () => {
       const params = createPaginateParams<User>().filter('address.city', eq('Berlin')).toParams();
-
       expect(params['filter.address.city']).toBe('$eq:Berlin');
     });
 
     it('filters by city with case-insensitive partial match', () => {
       const params = createPaginateParams<User>().filter('address.city', ilike('ber')).toParams();
-
       expect(params['filter.address.city']).toBe('$ilike:ber');
     });
 
     it('filters by street starts-with', () => {
       const params = createPaginateParams<User>().filter('address.street', sw('Main')).toParams();
-
       expect(params['filter.address.street']).toBe('$sw:Main');
     });
 
-    it('filters by state using OR across multiple values', () => {
+    it('filters by state using expression OR', () => {
       const params = createPaginateParams<User>()
-        .filter('address.state', [or(eq('NY')), or(eq('CA'))])
+        .filterExpression(or(leaf('address.state', eq('NY')), leaf('address.state', eq('CA'))))
         .toParams();
 
-      expect(params['filter.address.state']).toEqual(['$or:$eq:NY', '$or:$eq:CA']);
+      expect(params.filter).toBe('address.state=$eq:NY OR address.state=$eq:CA');
     });
 
     it('filters by zip using $in', () => {
@@ -253,5 +265,30 @@ describe('PaginateQueryBuilder', () => {
       expect(params['filter.address.city']).toBeUndefined();
       expect(params['filter.address.state']).toBe('$eq:BE');
     });
+
+    it('supports to-many quantifier helpers', () => {
+      const params = createPaginateParams<User>()
+        .filter('courses.courseId', none(eq(1)))
+        .toParams();
+      expect(params['filter.courses.courseId']).toBe('$none:$eq:1');
+    });
+  });
+});
+
+describe('filter expressions', () => {
+  it('stringifies and parses round-trip', () => {
+    const expr = and(
+      leaf('color', eq('black')),
+      or(leaf('name', eq('Milo')), leaf('name', eq('Garfield'))),
+    );
+    const str = stringifyFilterExpression(expr);
+    expect(str).toBe('color=$eq:black AND (name=$eq:Milo OR name=$eq:Garfield)');
+    expect(parseFilterExpression(str)).toEqual(expr);
+  });
+
+  it('stringifies NOT', () => {
+    expect(stringifyFilterExpression(notExpr(leaf('name', eq('Leche'))))).toBe(
+      'NOT name=$eq:Leche',
+    );
   });
 });

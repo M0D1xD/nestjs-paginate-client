@@ -1,6 +1,16 @@
 export { createPaginateParams, PaginateQueryBuilder } from './lib/builder';
 export {
   and,
+  DEFAULT_FILTER_EXPRESSION_MAX_COMPLEXITY,
+  leaf,
+  notExpr,
+  or,
+  parseFilterExpression,
+  stringifyFilterExpression,
+} from './lib/expression';
+export {
+  all,
+  any,
   btw,
   buildFilterToken,
   contains,
@@ -12,19 +22,20 @@ export {
   inOp,
   lt,
   lte,
+  none,
   not,
   nullOp,
-  or,
   sw,
 } from './lib/filter';
 export type { FilterTokenOptions } from './lib/filter';
 export { fromQueryString } from './lib/parse';
 export { toQueryString } from './lib/query-string';
 export {
-  FilterComparator,
   FilterOperator,
+  FilterQuantifier,
   FilterSuffix,
   type ColumnPath,
+  type FilterExpression,
   type PaginateParamsInput,
   type PaginateParamsRaw,
   type SortDirection,

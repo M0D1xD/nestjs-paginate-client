@@ -1,5 +1,12 @@
+import { parseFilterExpression, stringifyFilterExpression } from './expression';
 import { toQueryString } from './query-string';
-import type { ColumnPath, PaginateParamsInput, PaginateParamsRaw, SortDirection } from './types';
+import type {
+  ColumnPath,
+  FilterExpression,
+  PaginateParamsInput,
+  PaginateParamsRaw,
+  SortDirection,
+} from './types';
 
 /**
  * Fluent builder for nestjs-paginate query parameters.
@@ -50,7 +57,7 @@ export class PaginateQueryBuilder<T extends object = Record<string, unknown>> {
    * Updated via repeated {@link filter} calls.
    */
   private _filter: Record<string, string | string[]> = {};
-
+  private _filterExpression?: string;
   /**
    * Cursor token for cursor-based pagination.
    * Set via {@link cursor}.
@@ -135,7 +142,6 @@ export class PaginateQueryBuilder<T extends object = Record<string, unknown>> {
    */
   select(columns: ColumnPath<T>[]): this {
     this._select = columns.slice();
-
     return this;
   }
 
@@ -149,7 +155,29 @@ export class PaginateQueryBuilder<T extends object = Record<string, unknown>> {
    */
   filter(column: ColumnPath<T>, token: string | string[]): this {
     this._filter[column as string] = token;
+    return this;
+  }
 
+  /**
+   * Set the boolean `filter=` expression (AST or raw string).
+   */
+  filterExpression(expr: FilterExpression | string): this {
+    this._filterExpression = typeof expr === 'string' ? expr : stringifyFilterExpression(expr);
+    return this;
+  }
+
+  /**
+   * Alias for {@link filterExpression}.
+   */
+  expr(expression: FilterExpression | string): this {
+    return this.filterExpression(expression);
+  }
+
+  /**
+   * Clear the `filter=` expression.
+   */
+  removeFilterExpression(): this {
+    this._filterExpression = undefined;
     return this;
   }
 
@@ -167,38 +195,26 @@ export class PaginateQueryBuilder<T extends object = Record<string, unknown>> {
   }
 
   /**
-   * Set the cursor for cursor-based pagination (next/previous page).
-   * Use the value from the previous response (e.g. `meta.cursor` or `links.next` query string).
-   *
-   * @param c - Opaque cursor string from the backend.
-   * @returns This builder for chaining.
+   * Set the cursor for cursor-based pagination.
    */
   cursor(c: string): this {
     this._cursor = c;
-
     return this;
   }
 
   /**
    * Include soft-deleted records when the backend supports it.
-   *
-   * @param value - `true` to include deleted records.
-   * @returns This builder for chaining.
    */
   withDeleted(value: boolean): this {
     this._withDeleted = value;
-
     return this;
   }
 
   /**
-   * Create a deep copy of this builder. Mutations on the clone do not affect the original.
-   *
-   * @returns A new {@link PaginateQueryBuilder} with the same state.
+   * Create a deep copy of this builder.
    */
   clone(): PaginateQueryBuilder<T> {
     const copy = new PaginateQueryBuilder<T>();
-
     copy._page = this._page;
     copy._limit = this._limit;
     copy._sortBy = this._sortBy.map(([col, dir]) => [col, dir] as [string, SortDirection]);
@@ -208,17 +224,14 @@ export class PaginateQueryBuilder<T extends object = Record<string, unknown>> {
     copy._filter = Object.fromEntries(
       Object.entries(this._filter).map(([k, v]) => [k, Array.isArray(v) ? [...v] : v]),
     );
+    copy._filterExpression = this._filterExpression;
     copy._cursor = this._cursor;
     copy._withDeleted = this._withDeleted;
-
     return copy;
   }
 
   /**
    * Build a params object suitable for `URLSearchParams`, axios `params`, or fetch query string.
-   * Keys match nestjs-paginate: `page`, `limit`, `sortBy` (array), `search`, `searchBy`, `select`, `filter.<column>`, `cursor`, `withDeleted`.
-   *
-   * @returns Record of query parameter names to string or string[] values.
    */
   toParams(): PaginateParamsRaw {
     const raw: PaginateParamsRaw = {};
@@ -248,6 +261,10 @@ export class PaginateQueryBuilder<T extends object = Record<string, unknown>> {
     }
     if (this._withDeleted === true) {
       raw.withDeleted = 'true';
+    }
+
+    if (this._filterExpression !== undefined && this._filterExpression !== '') {
+      raw.filter = this._filterExpression;
     }
 
     Object.keys(this._filter).forEach((column) => {
@@ -291,6 +308,16 @@ export class PaginateQueryBuilder<T extends object = Record<string, unknown>> {
   toQueryString(): string {
     return toQueryString(this.toParams());
   }
+
+  /**
+   * Parsed `filter=` expression AST, if set.
+   */
+  getFilterExpression(): FilterExpression | undefined {
+    if (this._filterExpression === undefined || this._filterExpression === '') {
+      return undefined;
+    }
+    return parseFilterExpression(this._filterExpression);
+  }
 }
 
 /**
@@ -326,6 +353,14 @@ export const createPaginateParams = <T extends Record<string, unknown>>(
     return builder;
   }
 
+  applyInput(builder, input);
+  return builder;
+};
+
+const applyInput = <T extends Record<string, unknown>>(
+  builder: PaginateQueryBuilder<T>,
+  input: PaginateParamsInput<T>,
+): void => {
   if (input.page !== undefined) {
     builder.page(input.page);
   }
@@ -333,15 +368,16 @@ export const createPaginateParams = <T extends Record<string, unknown>>(
     builder.limit(input.limit);
   }
 
-  if (input.sortBy !== undefined && input.sortBy.length > 0) {
-    if (isSortByArray<T>(input.sortBy)) {
-      input.sortBy.forEach(([col, dir]) => {
+  if (input.sortBy !== undefined) {
+    if (input.sortBy.length > 0) {
+      if (isSortByArray<T>(input.sortBy)) {
+        input.sortBy.forEach(([col, dir]) => {
+          builder.sortBy(col, dir);
+        });
+      } else {
+        const [col, dir] = input.sortBy;
         builder.sortBy(col, dir);
-      });
-    } else {
-      const [col, dir] = input.sortBy;
-
-      builder.sortBy(col, dir);
+      }
     }
   }
 
@@ -369,5 +405,7 @@ export const createPaginateParams = <T extends Record<string, unknown>>(
     });
   }
 
-  return builder;
+  if (input.filterExpression !== undefined) {
+    builder.filterExpression(input.filterExpression);
+  }
 };
