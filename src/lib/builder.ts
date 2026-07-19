@@ -110,6 +110,17 @@ export class PaginateQueryBuilder<T extends object = Record<string, unknown>> {
   }
 
   /**
+   * Add a polymorphic sort (`colA~colB:DIRECTION`) for inheritance / joined polymorphic columns.
+   */
+  sortByPolymorphic(columns: ColumnPath<T>[], direction: SortDirection): this {
+    if (columns.length === 0) {
+      throw new Error('sortByPolymorphic() requires at least one column');
+    }
+    this._sortBy.push([columns.join('~'), direction]);
+    return this;
+  }
+
+  /**
    * Set the search term to filter results across searchable columns.
    *
    * @param term - Search string (e.g. user-typed query).
@@ -146,12 +157,9 @@ export class PaginateQueryBuilder<T extends object = Record<string, unknown>> {
   }
 
   /**
-   * Add a filter on a column. Use filter helpers (e.g. {@link eq}, {@link gte}, {@link inOp}) to build token strings.
-   * Call multiple times for the same column to add multiple conditions (e.g. OR filters).
-   *
-   * @param column - Column path to filter on (must be in {@link ColumnPath}<T>).
-   * @param token - Filter token string or array of tokens (e.g. `eq('John')`, `[or(eq('A')), or(eq('B'))]`).
-   * @returns This builder for chaining.
+   * Add a per-column filter (`filter.<column>`). Use token helpers (`eq`, `gte`, `any`, …).
+   * Multiple tokens for the same column are AND-ed by the backend.
+   * For cross-column AND/OR/NOT, use {@link filterExpression}.
    */
   filter(column: ColumnPath<T>, token: string | string[]): this {
     this._filter[column as string] = token;
@@ -228,6 +236,25 @@ export class PaginateQueryBuilder<T extends object = Record<string, unknown>> {
     copy._cursor = this._cursor;
     copy._withDeleted = this._withDeleted;
     return copy;
+  }
+
+  /**
+   * Return a new builder with `partial` merged on top (immutable update for UI stores).
+   */
+  with(partial: PaginateParamsInput<T>): PaginateQueryBuilder<T> {
+    return this.clone().merge(partial);
+  }
+
+  /**
+   * Mutate this builder by applying fields from `partial`.
+   * List fields (`sortBy`) are replaced when provided; filters are overlaid by column.
+   */
+  merge(partial: PaginateParamsInput<T>): this {
+    if (partial.sortBy !== undefined) {
+      this._sortBy = [];
+    }
+    applyInput(this, partial);
+    return this;
   }
 
   /**
