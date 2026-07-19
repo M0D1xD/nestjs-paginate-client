@@ -1,0 +1,6 @@
+packages:
+  - examples/*
+allowBuilds:
+  esbuild: true
+minimumReleaseAgeExclude:
+  - tsdown@0.22.11

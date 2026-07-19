@@ -19,9 +19,13 @@ export enum FilterSuffix {
   NOT = '$not',
 }
 
-export enum FilterComparator {
-  AND = '$and',
-  OR = '$or',
+/**
+ * Quantifiers for to-many relation filters (`$any` default, `$all`, `$none`).
+ */
+export enum FilterQuantifier {
+  ANY = '$any',
+  ALL = '$all',
+  NONE = '$none',
 }
 
 export type SortDirection = 'ASC' | 'DESC';
@@ -58,7 +62,7 @@ export type ColumnPath<T> = Column<T> extends infer C ? (C extends string ? C : 
 
 /**
  * Params shape for serialization (query string / axios params).
- * Keys: page, limit, sortBy[], search, searchBy[], select, filter.<column>, cursor, withDeleted.
+ * Keys: page, limit, sortBy[], search, searchBy[], select, filter.<column>, filter, cursor, withDeleted.
  */
 export type PaginateParamsRaw = Record<string, string | string[]>;
 
@@ -91,6 +95,16 @@ export interface PaginatedResponse<T> {
   meta: PaginatedMeta;
   links: PaginatedLinks;
 }
+
+/**
+ * Boolean filter expression AST for the `filter=` query parameter.
+ * Grammar (precedence: NOT > AND > OR): leaf | AND | OR | NOT | grouped.
+ */
+export type FilterExpression =
+  | { type: 'and'; children: FilterExpression[] }
+  | { type: 'or'; children: FilterExpression[] }
+  | { type: 'not'; child: FilterExpression }
+  | { type: 'leaf'; column: string; value: string };
 
 /**
  * Input shape for building paginate params, aligned with nestjs-paginate query contract.
@@ -145,11 +159,20 @@ export interface PaginateParamsInput<T> {
 
   /**
    * Filter by column. Each key is a column path; each value is a filter token string or array of tokens.
-   * Token format: optional `$not`, then operator (e.g. `$eq`, `$gte`, `$in`), then value. Use helpers from this package (e.g. `eq()`, `gte()`) to build tokens.
-   * Available operators: `$eq`, `$gt`, `$gte`, `$lt`, `$lte`, `$in`, `$null`, `$btw`, `$ilike`, `$sw`, `$contains`. Comparators: `$and`, `$or`.
+   * Token format: optional `$quantifier`, optional `$not`, then operator (e.g. `$eq`, `$gte`, `$in`), then value.
+   * Use helpers from this package (e.g. `eq()`, `gte()`, `any()`) to build tokens.
+   * Available operators: `$eq`, `$gt`, `$gte`, `$lt`, `$lte`, `$in`, `$null`, `$btw`, `$ilike`, `$sw`, `$contains`.
+   * Quantifiers (to-many): `$any`, `$all`, `$none`.
+   * For cross-column AND/OR/NOT, use {@link filterExpression} instead of per-column `$and`/`$or`.
    * @example { name: eq('John'), age: gte(18) }
    */
   filter?: Partial<Record<ColumnPath<T>, string | string[]>>;
+
+  /**
+   * Boolean filter expression for the `filter=` query parameter (AND / OR / NOT across columns).
+   * Build with {@link and}, {@link or}, {@link not}, {@link leaf} from this package.
+   */
+  filterExpression?: FilterExpression | string;
 
   /**
    * Cursor for cursor-based pagination.

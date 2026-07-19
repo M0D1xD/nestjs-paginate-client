@@ -1,5 +1,12 @@
+import { parseFilterExpression, stringifyFilterExpression } from './expression';
 import { toQueryString } from './query-string';
-import type { ColumnPath, PaginateParamsInput, PaginateParamsRaw, SortDirection } from './types';
+import type {
+  ColumnPath,
+  FilterExpression,
+  PaginateParamsInput,
+  PaginateParamsRaw,
+  SortDirection,
+} from './types';
 
 /**
  * Fluent builder for nestjs-paginate query parameters.
@@ -9,196 +16,127 @@ import type { ColumnPath, PaginateParamsInput, PaginateParamsRaw, SortDirection 
  * @typeParam T - The entity type (e.g. `User`). Column names are constrained to {@link ColumnPath}<T>.
  */
 export class PaginateQueryBuilder<T extends object = Record<string, unknown>> {
-  /**
-   * Current page number to retrieve (1-based).
-   * Set via {@link page}.
-   */
   private _page?: number;
-
-  /**
-   * Number of records per page.
-   * Set via {@link limit}.
-   */
   private _limit?: number;
-
-  /**
-   * List of sort rules as [column, direction] pairs.
-   * Built up via repeated {@link sortBy} calls.
-   */
   private _sortBy: [string, SortDirection][] = [];
-
-  /**
-   * Search term to filter results.
-   * Set via {@link search}.
-   */
   private _search?: string;
-
-  /**
-   * List of column names to apply the search term to.
-   * Set via {@link searchBy}.
-   */
   private _searchBy: string[] = [];
-
-  /**
-   * List of columns to select and include in results.
-   * Set via {@link select}.
-   */
   private _select: string[] = [];
-
-  /**
-   * Mapping of filter column names to filter tokens (string or array for 'OR').
-   * Updated via repeated {@link filter} calls.
-   */
   private _filter: Record<string, string | string[]> = {};
-
-  /**
-   * Cursor token for cursor-based pagination.
-   * Set via {@link cursor}.
-   */
+  private _filterExpression?: string;
   private _cursor?: string;
-
-  /**
-   * Whether to include soft-deleted entities.
-   * Set via {@link withDeleted}.
-   */
   private _withDeleted?: boolean;
 
   /**
-   * Set the page number to retrieve.
-   * If invalid, the backend will apply its default (usually 1).
-   *
-   * @param n - Page number (1-based).
-   * @returns This builder for chaining.
+   * Set the page number to retrieve (1-based).
    */
   page(n: number): this {
     this._page = n;
-
     return this;
   }
 
   /**
    * Set the number of records per page.
-   * Backend may cap this to its configured max limit.
-   *
-   * @param n - Items per page.
-   * @returns This builder for chaining.
    */
   limit(n: number): this {
     this._limit = n;
-
     return this;
   }
 
   /**
    * Add a sort rule. Call multiple times to sort by several columns; order of calls defines sort priority.
-   *
-   * @param column - Column path to sort by (must be in {@link ColumnPath}<T>).
-   * @param direction - `'ASC'` or `'DESC'`.
-   * @returns This builder for chaining.
    */
   sortBy(column: ColumnPath<T>, direction: SortDirection): this {
     this._sortBy.push([column, direction]);
-
     return this;
   }
 
   /**
    * Set the search term to filter results across searchable columns.
-   *
-   * @param term - Search string (e.g. user-typed query).
-   * @returns This builder for chaining.
    */
   search(term: string): this {
     this._search = term;
-
     return this;
   }
 
   /**
    * Set which columns to search when using {@link PaginateQueryBuilder.search}.
-   * When not set, the backend uses all configured searchable columns.
-   *
-   * @param columns - Column paths to search in.
-   * @returns This builder for chaining.
    */
   searchBy(columns: ColumnPath<T>[]): this {
     this._searchBy = columns.slice();
-
     return this;
   }
 
   /**
-   * Set the list of fields to select (sparse fieldsets). When not set, the backend returns all fields.
-   *
-   * @param columns - Column paths to include in the response.
-   * @returns This builder for chaining.
+   * Set the list of fields to select (sparse fieldsets).
    */
   select(columns: ColumnPath<T>[]): this {
     this._select = columns.slice();
-
     return this;
   }
 
   /**
-   * Add a filter on a column. Use filter helpers (e.g. {@link eq}, {@link gte}, {@link inOp}) to build token strings.
-   * Call multiple times for the same column to add multiple conditions (e.g. OR filters).
-   *
-   * @param column - Column path to filter on (must be in {@link ColumnPath}<T>).
-   * @param token - Filter token string or array of tokens (e.g. `eq('John')`, `[or(eq('A')), or(eq('B'))]`).
-   * @returns This builder for chaining.
+   * Add a per-column filter (`filter.<column>`). Use token helpers (`eq`, `gte`, `any`, …).
+   * Multiple tokens for the same column are AND-ed by the backend.
+   * For cross-column AND/OR/NOT, use {@link filterExpression}.
    */
   filter(column: ColumnPath<T>, token: string | string[]): this {
     this._filter[column as string] = token;
-
     return this;
   }
 
   /**
-   * Remove a previously added filter for a column.
-   * If the column has no filter, this is a no-op.
-   *
-   * @param column - Column path whose filter should be removed.
-   * @returns This builder for chaining.
+   * Set the boolean `filter=` expression (AST or raw string).
+   */
+  filterExpression(expr: FilterExpression | string): this {
+    this._filterExpression = typeof expr === 'string' ? expr : stringifyFilterExpression(expr);
+    return this;
+  }
+
+  /**
+   * Alias for {@link filterExpression}.
+   */
+  expr(expression: FilterExpression | string): this {
+    return this.filterExpression(expression);
+  }
+
+  /**
+   * Clear the `filter=` expression.
+   */
+  removeFilterExpression(): this {
+    this._filterExpression = undefined;
+    return this;
+  }
+
+  /**
+   * Remove a previously added per-column filter.
    */
   removeFilter(column: ColumnPath<T>): this {
     delete this._filter[column as string];
-
     return this;
   }
 
   /**
-   * Set the cursor for cursor-based pagination (next/previous page).
-   * Use the value from the previous response (e.g. `meta.cursor` or `links.next` query string).
-   *
-   * @param c - Opaque cursor string from the backend.
-   * @returns This builder for chaining.
+   * Set the cursor for cursor-based pagination.
    */
   cursor(c: string): this {
     this._cursor = c;
-
     return this;
   }
 
   /**
    * Include soft-deleted records when the backend supports it.
-   *
-   * @param value - `true` to include deleted records.
-   * @returns This builder for chaining.
    */
   withDeleted(value: boolean): this {
     this._withDeleted = value;
-
     return this;
   }
 
   /**
-   * Create a deep copy of this builder. Mutations on the clone do not affect the original.
-   *
-   * @returns A new {@link PaginateQueryBuilder} with the same state.
+   * Create a deep copy of this builder.
    */
   clone(): PaginateQueryBuilder<T> {
     const copy = new PaginateQueryBuilder<T>();
-
     copy._page = this._page;
     copy._limit = this._limit;
     copy._sortBy = this._sortBy.map(([col, dir]) => [col, dir] as [string, SortDirection]);
@@ -208,17 +146,14 @@ export class PaginateQueryBuilder<T extends object = Record<string, unknown>> {
     copy._filter = Object.fromEntries(
       Object.entries(this._filter).map(([k, v]) => [k, Array.isArray(v) ? [...v] : v]),
     );
+    copy._filterExpression = this._filterExpression;
     copy._cursor = this._cursor;
     copy._withDeleted = this._withDeleted;
-
     return copy;
   }
 
   /**
    * Build a params object suitable for `URLSearchParams`, axios `params`, or fetch query string.
-   * Keys match nestjs-paginate: `page`, `limit`, `sortBy` (array), `search`, `searchBy`, `select`, `filter.<column>`, `cursor`, `withDeleted`.
-   *
-   * @returns Record of query parameter names to string or string[] values.
    */
   toParams(): PaginateParamsRaw {
     const raw: PaginateParamsRaw = {};
@@ -250,6 +185,10 @@ export class PaginateQueryBuilder<T extends object = Record<string, unknown>> {
       raw.withDeleted = 'true';
     }
 
+    if (this._filterExpression !== undefined && this._filterExpression !== '') {
+      raw.filter = this._filterExpression;
+    }
+
     Object.keys(this._filter).forEach((column) => {
       raw[`filter.${column}`] = this._filter[column];
     });
@@ -259,9 +198,6 @@ export class PaginateQueryBuilder<T extends object = Record<string, unknown>> {
 
   /**
    * Build a `URLSearchParams` instance from the current params.
-   * Repeated keys (e.g. `sortBy`, `searchBy`) are appended individually.
-   *
-   * @returns A `URLSearchParams` object ready for use with `fetch` or `URL`.
    */
   toURLSearchParams(): URLSearchParams {
     const usp = new URLSearchParams();
@@ -283,49 +219,31 @@ export class PaginateQueryBuilder<T extends object = Record<string, unknown>> {
   }
 
   /**
-   * Build a query string (e.g. `?page=1&limit=10&sortBy=name:ASC`) compatible with nestjs-paginate.
-   * Values are encoded with `encodeURIComponent`; repeated keys (sortBy, searchBy) are emitted as multiple key=value pairs.
-   *
-   * @returns Query string including leading `?`, or empty string if no params.
+   * Build a query string compatible with nestjs-paginate.
    */
   toQueryString(): string {
     return toQueryString(this.toParams());
   }
+
+  /**
+   * Parsed `filter=` expression AST, if set.
+   */
+  getFilterExpression(): FilterExpression | undefined {
+    if (this._filterExpression === undefined || this._filterExpression === '') {
+      return undefined;
+    }
+    return parseFilterExpression(this._filterExpression);
+  }
 }
 
-/**
- * Type guard to distinguish between a single sortBy tuple and an array of tuples.
- * This allows TypeScript to properly narrow the union type without `as unknown as` casts.
- */
 const isSortByArray = <T extends Record<string, unknown>>(
   s: [ColumnPath<T>, SortDirection][] | [ColumnPath<T>, SortDirection],
 ): s is [ColumnPath<T>, SortDirection][] => Array.isArray(s[0]);
 
-/**
- * Create a new paginate query builder for entity type `T`, optionally pre-populated from a plain input object.
- * Column names in `sortBy`, `searchBy`, `select`, and `filter` will be type-checked against {@link ColumnPath}<T>.
- *
- * @typeParam T - The entity type (e.g. `User`, `Offer`).
- * @param input - Optional initial params. Each field maps to the corresponding builder method.
- * @returns A new {@link PaginateQueryBuilder} instance.
- *
- * @example
- * ```ts
- * type User = { name: string; email: string };
- * const params = createPaginateParams<User>({ page: 1, filter: { name: eq('John') } })
- *   .limit(10)
- *   .toQueryString();
- * ```
- */
-export const createPaginateParams = <T extends Record<string, unknown>>(
-  input?: PaginateParamsInput<T>,
-): PaginateQueryBuilder<T> => {
-  const builder = new PaginateQueryBuilder<T>();
-
-  if (!input) {
-    return builder;
-  }
-
+const applyInput = <T extends Record<string, unknown>>(
+  builder: PaginateQueryBuilder<T>,
+  input: PaginateParamsInput<T>,
+): void => {
   if (input.page !== undefined) {
     builder.page(input.page);
   }
@@ -333,15 +251,16 @@ export const createPaginateParams = <T extends Record<string, unknown>>(
     builder.limit(input.limit);
   }
 
-  if (input.sortBy !== undefined && input.sortBy.length > 0) {
-    if (isSortByArray<T>(input.sortBy)) {
-      input.sortBy.forEach(([col, dir]) => {
+  if (input.sortBy !== undefined) {
+    if (input.sortBy.length > 0) {
+      if (isSortByArray<T>(input.sortBy)) {
+        input.sortBy.forEach(([col, dir]) => {
+          builder.sortBy(col, dir);
+        });
+      } else {
+        const [col, dir] = input.sortBy;
         builder.sortBy(col, dir);
-      });
-    } else {
-      const [col, dir] = input.sortBy;
-
-      builder.sortBy(col, dir);
+      }
     }
   }
 
@@ -369,5 +288,23 @@ export const createPaginateParams = <T extends Record<string, unknown>>(
     });
   }
 
+  if (input.filterExpression !== undefined) {
+    builder.filterExpression(input.filterExpression);
+  }
+};
+
+/**
+ * Create a new paginate query builder for entity type `T`, optionally pre-populated from a plain input object.
+ */
+export const createPaginateParams = <T extends Record<string, unknown>>(
+  input?: PaginateParamsInput<T>,
+): PaginateQueryBuilder<T> => {
+  const builder = new PaginateQueryBuilder<T>();
+
+  if (!input) {
+    return builder;
+  }
+
+  applyInput(builder, input);
   return builder;
 };

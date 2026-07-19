@@ -3,21 +3,9 @@ import type { ColumnPath, SortDirection } from './types';
 
 /**
  * Parse a nestjs-paginate query string into a {@link PaginateQueryBuilder}.
- * Supports all standard query params: `page`, `limit`, `sortBy`, `search`, `searchBy`,
- * `select`, `cursor`, `withDeleted`, and `filter.<column>`.
- *
- * The resulting builder can be further modified or serialized via `.toParams()` / `.toQueryString()`.
- *
- * @param qs - Query string, with or without a leading `?`.
- * @returns A pre-populated {@link PaginateQueryBuilder}<T>.
- *
- * @example
- * ```ts
- * const builder = fromQueryString<User>('?page=2&filter.name=%24eq%3AJohn');
- * builder.limit(10).toQueryString();
- * ```
+ * Supports: `page`, `limit`, `sortBy`, `search`, `searchBy`, `select`, `cursor`,
+ * `withDeleted`, `filter.<column>`, and boolean `filter=`.
  */
-
 export const fromQueryString = <T extends Record<string, unknown>>(
   qs: string,
 ): PaginateQueryBuilder<T> => {
@@ -25,7 +13,6 @@ export const fromQueryString = <T extends Record<string, unknown>>(
   const queryStr = qs.startsWith('?') ? qs.slice(1) : qs;
   const decodeQueryComponent = (value: string): string | null => {
     try {
-      // Support x-www-form-urlencoded style where '+' represents a space.
       return decodeURIComponent(value.replace(/\+/g, ' '));
     } catch {
       return null;
@@ -38,6 +25,7 @@ export const fromQueryString = <T extends Record<string, unknown>>(
 
   const searchByValues: string[] = [];
   const filterMap: Record<string, string[]> = {};
+  let filterExpression: string | undefined;
 
   queryStr
     .split('&')
@@ -58,70 +46,63 @@ export const fromQueryString = <T extends Record<string, unknown>>(
 
       if (key === 'page') {
         const n = Number.parseInt(val, 10);
-
         if (!Number.isNaN(n)) {
           builder.page(n);
         }
-
         return;
       }
 
       if (key === 'limit') {
         const n = Number.parseInt(val, 10);
-
         if (!Number.isNaN(n)) {
           builder.limit(n);
         }
-
         return;
       }
 
       if (key === 'sortBy') {
         const colonIdx = val.lastIndexOf(':');
-
         if (colonIdx !== -1) {
           const col = val.slice(0, colonIdx) as ColumnPath<T>;
           const dir = val.slice(colonIdx + 1) as SortDirection;
-
           builder.sortBy(col, dir);
         }
-
         return;
       }
 
       if (key === 'search') {
         builder.search(val);
-
         return;
       }
 
       if (key === 'searchBy') {
         searchByValues.push(val);
-
         return;
       }
 
       if (key === 'select') {
         builder.select(val.split(',') as ColumnPath<T>[]);
-
         return;
       }
 
       if (key === 'cursor') {
         builder.cursor(val);
-
         return;
       }
 
       if (key === 'withDeleted') {
         builder.withDeleted(val === 'true');
+        return;
+      }
 
+      // Boolean filter expression (`filter=...`), not `filter.<column>`
+      if (key === 'filter') {
+        filterExpression = val;
         return;
       }
 
       if (key.startsWith('filter.')) {
         const col = key.slice('filter.'.length);
-
         (filterMap[col] ??= []).push(val);
       }
     });
@@ -134,6 +115,10 @@ export const fromQueryString = <T extends Record<string, unknown>>(
     const tokens = filterMap[col];
     builder.filter(col as ColumnPath<T>, tokens.length === 1 ? tokens[0] : tokens);
   });
+
+  if (filterExpression !== undefined) {
+    builder.filterExpression(filterExpression);
+  }
 
   return builder;
 };

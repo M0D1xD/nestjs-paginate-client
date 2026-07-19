@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { createPaginateParams, eq, or } from '..';
+import { createPaginateParams, eq } from '..';
+import { leaf, or } from './expression';
 import { fromQueryString } from './parse';
 
 type User = { id: number; name: string; email: string };
@@ -58,10 +59,15 @@ describe('fromQueryString', () => {
   });
 
   it('parses multiple values for the same filter key into array', () => {
+    const params = fromQueryString<User>('?filter.name=%24eq%3AA&filter.name=%24eq%3AB').toParams();
+    expect(params['filter.name']).toEqual(['$eq:A', '$eq:B']);
+  });
+
+  it('parses filter= expression', () => {
     const params = fromQueryString<User>(
-      '?filter.name=%24or%3A%24eq%3AA&filter.name=%24or%3A%24eq%3AB',
+      '?filter=name%3D%24eq%3AMilo%20AND%20email%3D%24eq%3Aa%40b.c',
     ).toParams();
-    expect(params['filter.name']).toEqual(['$or:$eq:A', '$or:$eq:B']);
+    expect(params.filter).toBe('name=$eq:Milo AND email=$eq:a@b.c');
   });
 
   it('skips malformed key/value pairs and keeps valid ones', () => {
@@ -79,7 +85,8 @@ describe('fromQueryString', () => {
       .search('test')
       .searchBy(['name', 'email'])
       .select(['id', 'name'])
-      .filter('name', [or(eq('A')), or(eq('B'))]);
+      .filter('name', [eq('A'), eq('B')])
+      .filterExpression(or(leaf('email', eq('a@b.c')), leaf('email', eq('c@d.e'))));
 
     const qs = original.toQueryString();
     const parsed = fromQueryString<User>(qs);
